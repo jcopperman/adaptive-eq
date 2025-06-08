@@ -2,13 +2,17 @@
 
 An automatic equalizer adjustment tool for Linux audiophiles. This application automatically adjusts your EasyEffects equalizer settings based on what you're listening to in Spotify.
 
+![Adaptive EQ Logo](icon.png)
+
 ## Features
 
-- Automatically detects currently playing track on Spotify
-- Maps artists to EQ presets
-- Applies appropriate EQ preset in EasyEffects
-- System tray integration for manual override
-- Portable design for Linux systems
+- **Automatic EQ Adjustment**: Detects the currently playing Spotify track and applies the appropriate EQ preset
+- **Genre-Based EQ Profiles**: Maps artists to genre-specific EQ presets for optimal sound
+- **System Tray Interface**: Convenient access to control and status information
+- **Desktop Notifications**: Notifications when EQ presets are changed
+- **Offline Support**: Caches track information for use when Spotify is offline
+- **Portable**: Supports multiple Linux distributions and can be packaged as an AppImage
+- **Easy Setup**: Automatic creation of EQ presets and simple configuration
 
 ## Requirements
 
@@ -18,34 +22,71 @@ An automatic equalizer adjustment tool for Linux audiophiles. This application a
 - Spotify Developer API credentials
 - Required system packages for the GTK interface:
   ```bash
+  # Debian/Ubuntu
   sudo apt-get install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
+  
+  # Fedora
+  sudo dnf install python3-gobject python3-cairo gtk3 libappindicator-gtk3
+  
+  # Arch Linux
+  sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3
   ```
 
-## Installation
+## Quick Installation
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/jcopperman/adaptive-eq.git
-   cd adaptive-eq
-   ```
+For the fastest installation:
 
-2. Run the setup script:
-   ```bash
-   ./setup.sh
-   ```
+```bash
+# Clone repository
+git clone https://github.com/jcopperman/adaptive-eq.git
+cd adaptive-eq
 
-3. Configure your Spotify API credentials:
-   ```bash
-   ./configure_spotify.py
-   ```
-   Or manually edit the `~/.adaptive-eq-credentials` file:
-   ```bash
-   export SPOTIFY_CLIENT_ID='your_client_id'
-   export SPOTIFY_CLIENT_SECRET='your_client_secret'
-   export SPOTIFY_REDIRECT_URI='http://localhost:8888/callback'
-   ```
+# Run setup script - this installs all dependencies
+./setup.sh
 
-4. Make sure EasyEffects is installed and has some presets.
+# Configure Spotify API credentials
+./configure_spotify.py
+
+# Create EQ presets for different music genres
+./create_eq_presets.py --all
+
+# Launch the app
+./run_tray.sh
+```
+
+## Detailed Installation
+
+### 1. Clone this repository:
+```bash
+git clone https://github.com/jcopperman/adaptive-eq.git
+cd adaptive-eq
+```
+
+### 2. Run the setup script:
+```bash
+./setup.sh
+```
+
+### 3. Configure your Spotify API credentials:
+```bash
+./configure_spotify.py
+```
+Or manually edit the `~/.adaptive-eq-credentials` file:
+```bash
+export SPOTIFY_CLIENT_ID='your_client_id'
+export SPOTIFY_CLIENT_SECRET='your_client_secret'
+export SPOTIFY_REDIRECT_URI='http://localhost:8888/callback'
+```
+
+### 4. Create EQ presets for different music genres:
+```bash
+./create_eq_presets.py --all
+```
+
+### 5. Launch the application:
+```bash
+./run_tray.sh
+```
 
 ## Usage
 

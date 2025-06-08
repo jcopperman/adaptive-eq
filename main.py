@@ -16,6 +16,7 @@ def load_profile_map(path="config/eq_profiles.json"):
 def main():
     print("Starting Adaptive EQ Daemon...")
     profile_map = load_profile_map()
+    print(f"Loaded {len(profile_map)} artist → preset mappings")
     last_artist = None
 
     while True:
@@ -31,10 +32,14 @@ def main():
             print(f"Detected new artist: {artist}")
             preset = profile_map.get(artist, "default")
             print(f"Applying EQ preset: {preset}")
-            apply_eq_preset(preset)
+            success = apply_eq_preset(preset)
+            if success:
+                print(f"Successfully applied EQ preset: {preset} for artist: {artist}")
+            else:
+                print(f"Failed to apply EQ preset: {preset} for artist: {artist}")
             last_artist = artist
 
-        time.sleep(10)
+        time.sleep(5)
 
 if __name__ == "__main__":
     main()
