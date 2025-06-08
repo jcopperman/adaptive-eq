@@ -209,12 +209,12 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 4. Set up your Spotify API credentials:
    - Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications)
-   - Set the redirect URI to `http://localhost:8888/callback`
+   - Set the redirect URI to `http://127.0.0.1:8888/callback`
    - Export your credentials:
      ```bash
      export SPOTIFY_CLIENT_ID='your_client_id'
      export SPOTIFY_CLIENT_SECRET='your_client_secret'
-     export SPOTIFY_REDIRECT_URI='http://localhost:8888/callback'
+     export SPOTIFY_REDIRECT_URI='http://127.0.0.1:8888/callback'
      ```
 
 5. Make sure EasyEffects is installed and has some presets:
