@@ -2,8 +2,6 @@
 
 An automatic equalizer adjustment tool for Linux audiophiles. This application automatically adjusts your EasyEffects equalizer settings based on what you're listening to in Spotify.
 
-![Adaptive EQ Logo](icon.png)
-
 ## Features
 
 - **Automatic EQ Adjustment**: Detects the currently playing Spotify track and applies the appropriate EQ preset
