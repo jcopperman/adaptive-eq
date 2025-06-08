@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Adaptive EQ
+Exec=adaptive-eq-wrapper
+Icon=adaptive-eq
+Type=Application
+Categories=AudioVideo;Audio;Music;

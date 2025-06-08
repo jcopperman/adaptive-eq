@@ -1,10 +1,15 @@
 import subprocess
 import os
 import json
+from services.logger import get_logger, log_exceptions
+
+# Set up logger
+logger = get_logger(__name__)
 
 # Path where EasyEffects stores its presets
 EASYEFFECTS_PRESETS_PATH = os.path.expanduser("~/.config/easyeffects/output/")
 
+@log_exceptions
 def get_available_presets():
     """
     Get a list of available EasyEffects presets.
@@ -14,20 +19,20 @@ def get_available_presets():
     
     # Start with user presets
     if not os.path.exists(EASYEFFECTS_PRESETS_PATH):
-        print(f"User EasyEffects presets directory not found: {EASYEFFECTS_PRESETS_PATH}")
+        logger.warning(f"User EasyEffects presets directory not found: {EASYEFFECTS_PRESETS_PATH}")
         
         # If user presets don't exist, try system presets
         if os.path.exists(system_presets_path):
             try:
                 presets = [f.replace('.json', '') for f in os.listdir(system_presets_path) 
                           if f.endswith('.json')]
-                print(f"Found {len(presets)} system presets in {system_presets_path}")
+                logger.info(f"Found {len(presets)} system presets in {system_presets_path}")
                 return presets
             except Exception as e:
-                print(f"Error listing system EasyEffects presets: {e}")
+                logger.error(f"Error listing system EasyEffects presets: {e}")
                 return []
         else:
-            print(f"System EasyEffects presets directory not found: {system_presets_path}")
+            logger.warning(f"System EasyEffects presets directory not found: {system_presets_path}")
             # Try a fallback approach - check if any presets exist in common locations
             fallback_paths = [
                 os.path.expanduser("~/.config/PulseEffects/output/"),  # Old PulseEffects location
@@ -40,11 +45,12 @@ def get_available_presets():
                         presets = [f.replace('.json', '') for f in os.listdir(path) 
                                   if f.endswith('.json')]
                         if presets:
-                            print(f"Found {len(presets)} presets in fallback location: {path}")
+                            logger.info(f"Found {len(presets)} presets in fallback location: {path}")
                             return presets
                     except Exception as e:
-                        print(f"Error listing fallback presets at {path}: {e}")
+                        logger.error(f"Error listing fallback presets at {path}: {e}")
             
+            logger.error("No EasyEffects or PulseEffects presets found in any location")
             return []
         
     try:
@@ -61,11 +67,14 @@ def get_available_presets():
                 if preset not in presets:
                     presets.append(preset)
         
+        logger.info(f"Found {len(presets)} EasyEffects presets")
+        logger.debug(f"Available presets: {', '.join(presets)}")
         return presets
     except Exception as e:
-        print(f"Error listing EasyEffects presets: {e}")
+        logger.error(f"Error listing EasyEffects presets: {e}")
         return []
 
+@log_exceptions
 def apply_eq_preset(preset_name):
     """
     Apply an EasyEffects preset by name.
@@ -75,11 +84,14 @@ def apply_eq_preset(preset_name):
     # Validate preset exists
     available_presets = get_available_presets()
     if preset_name not in available_presets:
-        print(f"Preset '{preset_name}' not found. Available presets: {available_presets}")
+        logger.error(f"Preset '{preset_name}' not found. Available presets: {available_presets}")
         return False
+    
+    logger.info(f"Applying EasyEffects preset: {preset_name}")
     
     try:
         # Method 1: Use gsettings to apply the preset (preferred method)
+        logger.debug("Trying gsettings method")
         cmd = [
             "gsettings", "set", "com.github.wwmm.easyeffects", "last-used-output-preset", 
             preset_name
@@ -88,13 +100,14 @@ def apply_eq_preset(preset_name):
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode == 0:
-            print(f"Successfully applied EasyEffects preset: {preset_name}")
+            logger.info(f"Successfully applied EasyEffects preset: {preset_name} using gsettings")
             return True
         else:
-            print(f"gsettings method failed: {result.stderr}. Trying alternative methods.")
+            logger.warning(f"gsettings method failed: {result.stderr}. Trying alternative methods.")
             
             # Method 2: Try using dbus-send as an alternative approach
             try:
+                logger.debug("Trying dbus-send method")
                 dbus_cmd = [
                     "dbus-send", "--session", "--type=method_call",
                     "--dest=com.github.wwmm.easyeffects",
@@ -105,15 +118,16 @@ def apply_eq_preset(preset_name):
                 dbus_result = subprocess.run(dbus_cmd, capture_output=True, text=True)
                 
                 if dbus_result.returncode == 0:
-                    print(f"Applied preset {preset_name} using dbus-send")
+                    logger.info(f"Applied preset {preset_name} using dbus-send")
                     return True
                 else:
-                    print(f"dbus-send method failed: {dbus_result.stderr}")
+                    logger.warning(f"dbus-send method failed: {dbus_result.stderr}")
             except Exception as e:
-                print(f"Error with dbus-send method: {e}")
+                logger.error(f"Error with dbus-send method: {e}")
             
             # Method 3: Try by copying the preset file to the current preset location
             try:
+                logger.debug("Trying file copy method")
                 # Find the preset file path
                 user_preset_path = os.path.join(EASYEFFECTS_PRESETS_PATH, f"{preset_name}.json")
                 system_preset_path = os.path.join("/usr/share/easyeffects/output", f"{preset_name}.json")
@@ -137,7 +151,7 @@ def apply_eq_preset(preset_name):
                     with open(current_preset_path, 'w') as dest_file:
                         json.dump(preset_data, dest_file, indent=2)
                     
-                    print(f"Applied preset {preset_name} by copying the preset file")
+                    logger.info(f"Applied preset {preset_name} by copying the preset file")
                     
                     # Send a refresh signal to EasyEffects
                     refresh_cmd = ["pkill", "-HUP", "easyeffects"]
@@ -149,11 +163,11 @@ def apply_eq_preset(preset_name):
                     
                     return True
                 else:
-                    print(f"Failed to apply preset. Preset file not found for {preset_name}")
+                    logger.error(f"Failed to apply preset. Preset file not found for {preset_name}")
                     return False
             except Exception as e:
-                print(f"Error applying preset by file copy: {e}")
+                logger.error(f"Error applying preset by file copy: {e}")
                 return False
     except Exception as e:
-        print(f"Error applying preset '{preset_name}': {e}")
+        logger.error(f"Error applying preset '{preset_name}': {e}")
         return False

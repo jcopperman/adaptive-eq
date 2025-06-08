@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.jcopperman.adaptive-eq</id>
+  <name>Adaptive EQ</name>
+  <summary>Automatically adjusts EasyEffects equalizer settings based on Spotify music</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Adaptive EQ is an automatic equalizer adjustment tool for Linux audiophiles. This application 
+      automatically adjusts your EasyEffects equalizer settings based on what you're listening to in Spotify.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Automatic EQ Adjustment: Detects the currently playing Spotify track and applies the appropriate EQ preset</li>
+      <li>Genre-Based EQ Profiles: Maps artists to genre-specific EQ presets for optimal sound</li>
+      <li>System Tray Interface: Convenient access to control and status information</li>
+      <li>Desktop Notifications: Notifications when EQ presets are changed</li>
+      <li>Offline Support: Caches track information for use when Spotify is offline</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">adaptive-eq.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/jcopperman/adaptive-eq/main/screenshot.png</image>
+      <caption>Adaptive EQ running in system tray</caption>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/jcopperman/adaptive-eq</url>
+  <provides>
+    <binary>adaptive-eq</binary>
+  </provides>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Music</category>
+  </categories>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.1.0" date="2025-06-08">
+      <description>
+        <p>Initial release</p>
+      </description>
+    </release>
+  </releases>
+</component>

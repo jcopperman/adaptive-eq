@@ -13,6 +13,9 @@ An automatic equalizer adjustment tool for Linux audiophiles. This application a
 - **Offline Support**: Caches track information for use when Spotify is offline
 - **Portable**: Supports multiple Linux distributions and can be packaged as an AppImage
 - **Easy Setup**: Automatic creation of EQ presets and simple configuration
+- **Universal Installer**: Works across different Linux distributions
+- **Robust Error Handling**: Comprehensive error handling and fallback mechanisms
+- **Logging System**: Detailed logging for troubleshooting
 
 ## Requirements
 
@@ -41,6 +44,10 @@ For the fastest installation:
 git clone https://github.com/jcopperman/adaptive-eq.git
 cd adaptive-eq
 
+# Run the universal installer script
+./install.sh
+
+# Or for a more manual approach:
 # Run setup script - this installs all dependencies
 ./setup.sh
 
@@ -51,7 +58,7 @@ cd adaptive-eq
 ./create_eq_presets.py --all
 
 # Launch the app
-./run_tray.sh
+./run.sh
 ```
 
 ## Detailed Installation
@@ -155,30 +162,131 @@ The `eq_helper.py` utility provides additional functionality for managing and te
 
 ## Building Portable Versions
 
-### AppImage
+### AppImage (recommended)
 
 ```bash
-# Build the AppImage
+# Option 1: Run the build script (recommended)
 ./build_appimage.sh
+
+# Option 2: Manual AppImage build
+# Install required tools
+pip install pyinstaller
+
+# Build single binary first
+pyinstaller --onefile --name adaptive-eq \
+    --add-data "icon.png:." \
+    --add-data "config:config" \
+    --hidden-import=gi \
+    --hidden-import=cairo \
+    --hidden-import=spotipy \
+    ui/tray.py
+
+# Then build the AppImage manually
+mkdir -p AppDir/usr/bin AppDir/usr/share/applications
+cp dist/adaptive-eq AppDir/usr/bin/
+cp adaptive-eq.desktop AppDir/usr/share/applications/
+cp icon.png AppDir/
+# ... etc.
 ```
 
-This will create an AppImage file in the current directory that can be run on any compatible Linux system.
+This will create an AppImage file named `Adaptive_EQ-x86_64.AppImage` in the current directory.
 
-## Features in the Tray Application
+### AppImage Dependencies
 
-- View currently playing track
-- Toggle adaptive mode on/off
-- Manually select EQ presets
-- Easy access to quit the application
+The AppImage will automatically check for required dependencies and guide users on installation if anything is missing. The primary dependencies are:
+
+```bash
+# For Debian/Ubuntu
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
+
+# For Fedora
+sudo dnf install python3-gobject python3-cairo gtk3 libappindicator-gtk3
+
+# For Arch Linux
+sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3
+```
+
+### Troubleshooting AppImage
+
+If you encounter issues with the AppImage:
+
+1. Make sure it has execute permissions: `chmod +x Adaptive_EQ-x86_64.AppImage`
+2. Run with debug output: `ADAPTIVE_EQ_LOG_LEVEL=debug ./Adaptive_EQ-x86_64.AppImage`
+3. Check GTK dependencies as mentioned above
+4. Check logs at `~/.cache/adaptive-eq/logs/`
+
+### Universal Installer
+
+For users who prefer a traditional installation, the universal installer script (`install.sh`) provides a more integrated experience:
+
+```bash
+# Run the installer
+./install.sh
+```
+
+The installer:
+- Detects your Linux distribution
+- Installs all required dependencies
+- Creates a Python virtual environment
+- Configures Spotify credentials
+- Creates desktop entries
+- Sets up EQ presets
+- Installs to `~/.local/share/adaptive-eq`
+
+After installation, you can launch the application from your desktop environment or run:
+
+```bash
+~/.local/bin/adaptive-eq
+```
+
+To uninstall:
+
+```bash
+~/.local/share/adaptive-eq/uninstall.sh
+```
 
 ## Troubleshooting
 
 If you encounter issues:
 
-1. Check your Spotify API credentials
-2. Make sure EasyEffects is installed and running
-3. Verify EasyEffects presets exist with the correct names
-4. Check system logs for any error messages
+1. **Check Dependencies**: Run `./check_dependencies.sh` to verify all required packages are installed
+2. **Verify Spotify Credentials**: Make sure your Spotify API credentials are correctly set up
+3. **EasyEffects Connection**: Ensure EasyEffects is installed and running
+4. **Check Logs**: Examine logs in `~/.cache/adaptive-eq/logs/` for detailed error information
+5. **Test Application**: Run `./quick_test.sh` to perform a comprehensive test of all components
+6. **Permission Issues**: Ensure all scripts have executable permissions (`chmod +x *.sh`)
+7. **Compatibility**: If using the AppImage, verify GTK dependencies on your system
+
+### Common Issues
+
+1. **"No module named 'gi'"**: Install PyGObject with:
+   ```bash
+   sudo apt install python3-gi python3-gi-cairo  # Debian/Ubuntu
+   sudo dnf install python3-gobject python3-cairo  # Fedora
+   sudo pacman -Sy python-gobject python-cairo  # Arch
+   ```
+
+2. **"AppIndicator3 not found"**: Install AppIndicator with:
+   ```bash
+   sudo apt install gir1.2-appindicator3-0.1  # Debian/Ubuntu
+   sudo dnf install libappindicator-gtk3  # Fedora
+   sudo pacman -Sy libappindicator-gtk3  # Arch
+   ```
+
+3. **"Cannot connect to Spotify"**: Check your credentials and internet connection. You can run:
+   ```bash
+   ./configure_spotify.py
+   ```
+
+4. **"Failed to apply EQ preset"**: Make sure EasyEffects is installed and running. Try:
+   ```bash
+   ./test_eq_presets.py --preset default
+   ```
+
+5. **AppImage issues**: If the AppImage fails to run, check if your system has the required GTK libraries:
+   ```bash
+   sudo apt install libgtk-3-0 libappindicator3-1  # Debian/Ubuntu
+   ```
 
 ## License
 
@@ -290,36 +398,37 @@ The `eq_helper.py` utility provides additional functionality for managing and te
 ### AppImage (recommended)
 
 ```bash
-# Install required tools
+# Install required tools (if not already installed)
+source system-venv/bin/activate  # Or your virtual environment
 pip install pyinstaller
 
-# Build single binary
-pyinstaller --onefile --name adaptive-eq ui/tray.py
+# Option 1: Build single binary first
+pyinstaller --onefile --name adaptive-eq \
+    --add-data "icon.png:." \
+    --add-data "config:config" \
+    --hidden-import=gi \
+    --hidden-import=cairo \
+    --hidden-import=spotipy \
+    ui/tray.py
 
-# Create AppDir structure
-mkdir -p AppDir/usr/bin
-mkdir -p AppDir/usr/share/applications
-mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-
-# Copy binary
-cp dist/adaptive-eq AppDir/usr/bin/
-
-# Create desktop file
-cat > AppDir/usr/share/applications/adaptive-eq.desktop << EOF
-[Desktop Entry]
-Name=Adaptive EQ
-Exec=adaptive-eq
-Icon=adaptive-eq
-Type=Application
-Categories=Audio;Music;
-EOF
-
-# Copy icon (create your own icon.png first)
-cp icon.png AppDir/usr/share/icons/hicolor/256x256/apps/adaptive-eq.png
-
-# Build AppImage (requires appimagetool)
-appimagetool AppDir
+# Option 2: Use the build script to handle everything
+./build_appimage.sh
 ```
+
+This will create an AppImage file named `Adaptive_EQ-x86_64.AppImage` in the current directory.
+
+> **Note**: The AppImage will still require the GTK libraries to be installed on the target system.
+> Install these dependencies on the target system with:
+> ```bash
+> # For Debian/Ubuntu
+> sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
+> 
+> # For Fedora
+> sudo dnf install python3-gobject python3-cairo gtk3 libappindicator-gtk3
+> 
+> # For Arch Linux
+> sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3
+> ```
 
 ### Debian Package
 

@@ -3,6 +3,10 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import time
 import json
+from services.logger import get_logger, log_exceptions
+
+# Set up logger
+logger = get_logger(__name__)
 
 # Cached client to avoid repeated authentication
 _spotify_client = None
@@ -20,6 +24,7 @@ def load_credentials_from_file():
     global SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REDIRECT_URI
     
     if SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET:
+        logger.debug("Using Spotify credentials from environment variables")
         return True
         
     creds_file = os.path.expanduser("~/.adaptive-eq-credentials")
@@ -35,12 +40,15 @@ def load_credentials_from_file():
                         SPOTIFY_REDIRECT_URI = line.split('=')[1].strip().strip("'").strip('"')
             
             if SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET:
+                logger.debug("Successfully loaded Spotify credentials from file")
                 return True
         except Exception as e:
-            print(f"Error loading credentials from file: {e}")
+            logger.error(f"Error loading credentials from file: {e}")
     
+    logger.warning("No Spotify credentials found in environment or credentials file")
     return False
 
+@log_exceptions
 def get_spotify_client():
     """
     Initialize and return a Spotify client with proper authentication.
@@ -58,12 +66,13 @@ def get_spotify_client():
             return _spotify_client
         except:
             # If the client is no longer valid, clear it and try again
-            print("Cached Spotify client is no longer valid. Re-authenticating...")
+            logger.warning("Cached Spotify client is no longer valid. Re-authenticating...")
             _spotify_client = None
     
     # If we've recently tried and failed to authenticate, don't try again yet
     current_time = time.time()
     if current_time - _last_auth_attempt < _auth_retry_interval:
+        logger.debug(f"Skipping authentication attempt (retry interval not elapsed: {_auth_retry_interval}s)")
         return None
     
     _last_auth_attempt = current_time
@@ -71,12 +80,13 @@ def get_spotify_client():
     # Try to load credentials if not already set
     if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
         if not load_credentials_from_file():
-            print("Spotify credentials not found. Please set up your credentials.")
+            logger.error("Spotify credentials not found. Please set up your credentials.")
             return None
     
     try:
         # Set up authentication scope
         scope = "user-read-currently-playing user-read-playback-state"
+        logger.debug("Initializing Spotify client with OAuth")
         
         # Create Spotify client
         cache_path = os.path.join(os.path.expanduser('~'), '.adaptive-eq-spotify-cache')
@@ -94,14 +104,16 @@ def get_spotify_client():
         
         # Test the connection
         sp.current_user()
+        logger.info("Successfully authenticated with Spotify")
         
         # Cache the client for future use
         _spotify_client = sp
         return sp
     except Exception as e:
-        print(f"Spotify authentication error: {e}")
+        logger.error(f"Spotify authentication error: {e}")
         return None
 
+@log_exceptions
 def get_current_track():
     """
     Get information about the currently playing track.
@@ -110,17 +122,25 @@ def get_current_track():
     """
     client = get_spotify_client()
     if not client:
+        logger.warning("Could not obtain Spotify client, trying cached track info")
+        cached_track = _get_cached_track_info()
+        if cached_track:
+            logger.info("Using cached track information")
+            return cached_track
         return None
     
     try:
         # Get currently playing track
+        logger.debug("Requesting current playback from Spotify API")
         current = client.current_playback()
         
         if not current or not current.get('is_playing'):
+            logger.debug("No track is currently playing")
             return None
             
         item = current.get('item')
         if not item:
+            logger.warning("Track is playing but no item information available")
             return None
             
         # Extract relevant track information
@@ -133,17 +153,19 @@ def get_current_track():
             'uri': item['uri']
         }
         
+        logger.info(f"Current track: {track_info['artist']} - {track_info['track']}")
+        
         # Store in cache for offline use
         _cache_track_info(track_info)
         
         return track_info
     except Exception as e:
-        print(f"Error getting current track: {e}")
+        logger.error(f"Error getting current track: {e}")
         
         # If we can't get the current track, try to use cached information
         cached_track = _get_cached_track_info()
         if cached_track:
-            print("Using cached track information.")
+            logger.info("Using cached track information due to error")
             return cached_track
         
         return None
@@ -157,8 +179,9 @@ def _cache_track_info(track_info):
         cache_file = os.path.join(cache_dir, "last_track.json")
         with open(cache_file, 'w') as f:
             json.dump(track_info, f)
+        logger.debug(f"Cached track info for {track_info['artist']} - {track_info['track']}")
     except Exception as e:
-        print(f"Error caching track info: {e}")
+        logger.error(f"Error caching track info: {e}")
 
 def _get_cached_track_info():
     """Get cached track information."""
@@ -166,9 +189,11 @@ def _get_cached_track_info():
         cache_file = os.path.expanduser("~/.cache/adaptive-eq/last_track.json")
         if os.path.exists(cache_file):
             with open(cache_file, 'r') as f:
-                return json.load(f)
+                track_info = json.load(f)
+                logger.debug(f"Retrieved cached track: {track_info['artist']} - {track_info['track']}")
+                return track_info
     except Exception as e:
-        print(f"Error reading cached track info: {e}")
+        logger.error(f"Error reading cached track info: {e}")
     
     return None
 
