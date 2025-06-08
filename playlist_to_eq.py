@@ -301,6 +301,17 @@ def save_eq_profiles(mappings, config_path):
         print(f"Error saving EQ profiles: {e}")
         return False
 
+def load_eq_profiles(config_path):
+    """Load existing EQ profiles from config file."""
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            print(f"Error: {config_path} contains invalid JSON.")
+            sys.exit(1)
+    return {}
+
 def process_playlist(sp, playlist_url, existing_profiles, available_presets, default_preset, config_path, auto_map=False):
     """Process a single playlist and update the EQ profiles."""
     # Get playlist ID
@@ -393,32 +404,56 @@ def main():
     
     args = parser.parse_args()
     
+    # Load existing EQ profiles
+    existing_profiles = load_eq_profiles(args.config)
+    
+    # Just list artists if requested
+    if args.list_artists:
+        print(f"\nArtists in {args.config}:")
+        for i, (artist, preset) in enumerate(sorted(existing_profiles.items()), 1):
+            print(f"{i}. {artist} → {preset}")
+        return
+    
+    # Check arguments
+    if not args.playlist_url and not args.playlists:
+        parser.print_help()
+        print("\nError: You must provide either a playlist URL or a file with playlist URLs")
+        sys.exit(1)
+    
     print(f"Using config file: {args.config}")
     print(f"Default preset: {args.default}")
     
     # Get Spotify client
     sp = get_spotify_client()
     
+    # Get available presets
+    available_presets = get_available_presets()
+    
+    # Process a single playlist
+    if args.playlist_url:
+        process_playlist(sp, args.playlist_url, existing_profiles, available_presets, args.default, args.config, args.auto)
+    
+    # Process multiple playlists
     if args.playlists:
-        # Process multiple playlists from file
-        try:
-            with open(args.playlists, 'r') as f:
-                playlist_urls = [line.strip() for line in f if line.strip()]
-            
-            print(f"\nFound {len(playlist_urls)} playlists in file.")
-            
-            for playlist_url in playlist_urls:
-                process_playlist(sp, playlist_url, existing_profiles, available_presets, args.default, args.config, args.auto)
-        except Exception as e:
-            print(f"Error processing playlists from file: {e}")
-    else:
-        # Process single playlist from URL
-        if args.playlist_url:
-            process_playlist(sp, args.playlist_url, existing_profiles, available_presets, args.default, args.config, args.auto)
-        else:
-            print("Error: No playlist URL or file provided.")
-            print("Please specify a playlist URL or a file containing playlist URLs.")
+        if not os.path.exists(args.playlists):
+            print(f"Error: Playlist file not found: {args.playlists}")
             sys.exit(1)
+            
+        with open(args.playlists, 'r') as f:
+            playlist_urls = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+        
+        print(f"\nProcessing {len(playlist_urls)} playlists...")
+        for i, url in enumerate(playlist_urls, 1):
+            print(f"\n[{i}/{len(playlist_urls)}] Processing playlist: {url}")
+            try:
+                process_playlist(sp, url, existing_profiles, available_presets, args.default, args.config, args.auto)
+                # Reload profiles after each playlist
+                existing_profiles = load_eq_profiles(args.config)
+            except Exception as e:
+                print(f"Error processing playlist {url}: {e}")
+    
+    print("\nAll playlists processed successfully!")
+    print(f"Total artists in profile: {len(load_eq_profiles(args.config))}")
 
 if __name__ == "__main__":
     main()
