@@ -7,6 +7,7 @@ This directory contains detailed documentation for the Adaptive EQ application.
 - [Logging System](logging.md) - Details about the logging system, log levels, and troubleshooting
 - [Compatibility Guide](compatibility.md) - Distribution-specific information and compatibility notes
 - [EasyEffects Troubleshooting](easyeffects_troubleshooting.md) - Fixing issues with EasyEffects UI synchronization
+- [GTK Dependencies](gtk_dependencies.md) - Resolving GTK and AppIndicator dependency issues
 
 ## Additional Resources
 
@@ -19,8 +20,12 @@ If you encounter issues with Adaptive EQ, please:
 
 1. Check the [logging documentation](logging.md) and examine your log files
 2. Verify your system meets the requirements in the [compatibility guide](compatibility.md)
-3. Run the `quick_test.sh` script to perform a comprehensive system check
-4. For AppImage-specific issues, try running with debug logging:
+3. For GTK-related issues (like "No module named 'gi'"), run the `troubleshoot_gtk.sh` script:
+   ```bash
+   ./troubleshoot_gtk.sh
+   ```
+4. Run the `quick_test.sh` script to perform a comprehensive system check
+5. For AppImage-specific issues, try running with debug logging:
    ```bash
    ADAPTIVE_EQ_LOG_LEVEL=debug ./Adaptive_EQ-x86_64.AppImage
    ```

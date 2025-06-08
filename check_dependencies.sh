@@ -82,7 +82,7 @@ if ! python3 -c "import gi; gi.require_version('AppIndicator3', '0.1'); from gi.
             MISSING_DEPS+=("libappindicator-gtk3|sudo pacman -Sy")
             ;;
         *)
-            MISSING_DEPS+=("libappindicator-gtk3|package-manager")
+            MISSING_DEPS+=("libappindicator3|package-manager")
             ;;
     esac
 else
@@ -190,4 +190,27 @@ else
         echo -e "${YELLOW}Please install the missing dependencies manually using the commands above.${NC}"
         exit 1
     fi
+fi
+
+# Check for Python virtual environment and system packages access
+if [[ -n "$VIRTUAL_ENV" ]]; then
+    echo -e "${BLUE}Running in a virtual environment: $VIRTUAL_ENV${NC}"
+    if ! python3 -c "import gi" &>/dev/null; then
+        echo -e "${YELLOW}Virtual environment may not have access to system packages.${NC}"
+        echo -e "To enable system packages in your virtual environment, try one of these methods:"
+        echo -e "1. Install the system-site-packages option: ${BLUE}python -m venv venv --system-site-packages${NC}"
+        echo -e "2. Use a tool like vext: ${BLUE}pip install vext vext.gi${NC}"
+        echo -e "3. Install GTK development packages and compile PyGObject in your virtual environment"
+        echo -e "\nFor more information, see: ${BLUE}docs/gtk_dependencies.md${NC}"
+        echo -e "Or run the troubleshooting script: ${BLUE}./troubleshoot_gtk.sh${NC}"
+    fi
+fi
+
+# If there are any GTK-related issues, suggest the troubleshooting script
+if ! python3 -c "import gi" &>/dev/null || ! python3 -c "import gi; gi.require_version('AppIndicator3', '0.1'); from gi.repository import AppIndicator3" &>/dev/null; then
+    echo -e "\n${YELLOW}=== GTK Troubleshooting ===${NC}"
+    echo -e "For automated diagnosis and fixing of GTK issues, run:"
+    echo -e "${BLUE}  ./troubleshoot_gtk.sh${NC}"
+    echo -e "For manual troubleshooting, see:"
+    echo -e "${BLUE}  docs/gtk_dependencies.md${NC}"
 fi

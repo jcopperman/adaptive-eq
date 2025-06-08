@@ -5,45 +5,110 @@
 
 set -e
 
-echo "====================================="
-echo "Adaptive EQ Setup"
-echo "====================================="
+# Define colors for better readability
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Create virtual environment if it doesn't exist
+echo -e "${BLUE}=====================================${NC}"
+echo -e "${BLUE}Adaptive EQ Setup${NC}"
+echo -e "${BLUE}=====================================${NC}"
+
+# Detect Linux distribution
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    DISTRO=$ID
+    echo -e "Detected distribution: ${GREEN}$DISTRO${NC}"
+elif [ -f /etc/debian_version ]; then
+    DISTRO="debian"
+    echo -e "Detected distribution: ${GREEN}Debian-based${NC}"
+elif [ -f /etc/fedora-release ]; then
+    DISTRO="fedora"
+    echo -e "Detected distribution: ${GREEN}Fedora${NC}"
+elif [ -f /etc/arch-release ]; then
+    DISTRO="arch"
+    echo -e "Detected distribution: ${GREEN}Arch Linux${NC}"
+else
+    DISTRO="unknown"
+    echo -e "${YELLOW}Could not detect Linux distribution. Will use generic installation process.${NC}"
+fi
+
+# Install GTK dependencies
+echo -e "${BLUE}Installing system dependencies...${NC}"
+case $DISTRO in
+    "ubuntu"|"debian"|"linuxmint"|"pop"|"elementary"|"zorin")
+        echo -e "Installing dependencies for ${GREEN}Debian/Ubuntu-based${NC} system..."
+        sudo apt-get update
+        sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1 easyeffects
+        ;;
+    "fedora"|"rhel"|"centos"|"rocky"|"alma")
+        echo -e "Installing dependencies for ${GREEN}Fedora/RHEL-based${NC} system..."
+        sudo dnf install -y python3-gobject python3-cairo gtk3 libappindicator-gtk3 easyeffects
+        ;;
+    "arch"|"manjaro"|"endeavouros")
+        echo -e "Installing dependencies for ${GREEN}Arch-based${NC} system..."
+        sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3 easyeffects
+        ;;
+    *)
+        echo -e "${YELLOW}Warning: Unsupported distribution. Please install the required packages manually:${NC}"
+        echo -e "- Python3 GTK3 bindings (python3-gi/python-gobject)"
+        echo -e "- Cairo bindings (python3-cairo/python-cairo)"
+        echo -e "- GTK3 libraries (gtk3)"
+        echo -e "- AppIndicator libraries (libappindicator-gtk3)"
+        echo -e "- EasyEffects"
+        echo -e "\nSee docs/gtk_dependencies.md for more information."
+        ;;
+esac
+
+# Create virtual environment with system packages
 if [ ! -d "system-venv" ]; then
-    echo "Creating Python virtual environment..."
-    python3 -m venv system-venv
+    echo -e "${BLUE}Creating Python virtual environment with system packages...${NC}"
+    python3 -m venv system-venv --system-site-packages
+else
+    echo -e "${YELLOW}Virtual environment already exists. Checking if it has system packages access...${NC}"
+    # Test if the virtual environment can access system packages
+    if source system-venv/bin/activate && ! python3 -c "import gi" &>/dev/null; then
+        echo -e "${RED}Virtual environment does not have access to system packages.${NC}"
+        echo -e "${YELLOW}Would you like to recreate it with system packages access? (y/n)${NC}"
+        read -r recreate
+        if [[ "$recreate" =~ ^[Yy]$ ]]; then
+            echo -e "${BLUE}Recreating virtual environment with system packages...${NC}"
+            rm -rf system-venv
+            python3 -m venv system-venv --system-site-packages
+        else
+            echo -e "${YELLOW}Continuing with current virtual environment. GTK may not work correctly.${NC}"
+            echo -e "See docs/gtk_dependencies.md for troubleshooting information."
+        fi
+    fi
 fi
 
 # Activate virtual environment
 source system-venv/bin/activate
 
-echo "Installing system dependencies..."
-if [ -f /etc/debian_version ]; then
-    # Debian/Ubuntu
-    sudo apt-get update
-    sudo apt-get install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1 easyeffects
-elif [ -f /etc/fedora-release ]; then
-    # Fedora
-    sudo dnf install -y python3-gobject python3-cairo gtk3 libappindicator-gtk3 easyeffects
-elif [ -f /etc/arch-release ]; then
-    # Arch Linux
-    sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3 easyeffects
-else
-    echo "Warning: Unsupported distribution. Please install the required packages manually:"
-    echo "- Python3 GTK3 bindings (python3-gi/python-gobject)"
-    echo "- Cairo bindings (python3-cairo/python-cairo)"
-    echo "- GTK3 libraries (gtk3)"
-    echo "- AppIndicator libraries (libappindicator-gtk3)"
-    echo "- EasyEffects"
-fi
-
-echo "Installing Python dependencies..."
+echo -e "${BLUE}Installing Python dependencies...${NC}"
 pip install -r requirements.txt
 
-echo "Dependencies installed successfully!"
+echo -e "${GREEN}Dependencies installed successfully!${NC}"
 
-echo "Setting up configuration directories..."
+# Verify GTK dependencies
+echo -e "${BLUE}Verifying GTK dependencies...${NC}"
+if python3 -c "import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gtk; print('GTK is installed')" &>/dev/null; then
+    echo -e "${GREEN}✓ GTK is properly installed and accessible${NC}"
+else
+    echo -e "${RED}✗ GTK is not properly installed or not accessible${NC}"
+    echo -e "${YELLOW}Please check the GTK dependencies troubleshooting guide: docs/gtk_dependencies.md${NC}"
+fi
+
+if python3 -c "import gi; gi.require_version('AppIndicator3', '0.1'); from gi.repository import AppIndicator3; print('AppIndicator3 is installed')" &>/dev/null; then
+    echo -e "${GREEN}✓ AppIndicator3 is properly installed and accessible${NC}"
+else
+    echo -e "${RED}✗ AppIndicator3 is not properly installed or not accessible${NC}"
+    echo -e "${YELLOW}Please check the GTK dependencies troubleshooting guide: docs/gtk_dependencies.md${NC}"
+fi
+
+echo -e "${BLUE}Setting up configuration directories...${NC}"
 mkdir -p ~/.config/adaptive-eq
 mkdir -p ~/.cache/adaptive-eq
 
@@ -86,13 +151,13 @@ EOF
 # Make the launcher scripts executable
 chmod +x run_tray.sh adaptive-eq-launcher
 
-echo "====================================="
-echo "Setup complete!"
+echo -e "${BLUE}=====================================${NC}"
+echo -e "${GREEN}Setup complete!${NC}"
 echo "You can now run the application with:"
 echo "./run_tray.sh"
 echo ""
 echo "Or from your applications menu."
-echo "====================================="
+echo -e "${BLUE}=====================================${NC}"
 
 # Prompt for Spotify configuration
 echo ""

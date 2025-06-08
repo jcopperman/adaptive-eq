@@ -350,10 +350,31 @@ def main():
         gi.require_version('Gtk', '3.0')
         gi.require_version('AppIndicator3', '0.1')
         from gi.repository import Gtk, AppIndicator3
-        print("  ✓ GTK and AppIndicator are properly configured")
-    except (ImportError, ValueError) as e:
-        print(f"  ✗ GTK or AppIndicator is not properly configured: {e}")
-        errors.append("GTK or AppIndicator is not properly configured")
+        print("  ✓ GTK and AppIndicator3 are installed")
+    except ImportError as e:
+        print(f"  ✗ GTK or AppIndicator3 not properly installed: {e}")
+        errors.append("Missing GTK dependencies")
+        
+        # Provide system-specific installation instructions
+        echo -e "\nTo install GTK dependencies:"
+        if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" || "$DISTRO" == "pop" || "$DISTRO" == "elementary" || "$DISTRO" == "mint" || "$DISTRO" == "zorin" ]]; then
+            echo "  sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1"
+        elif [[ "$DISTRO" == "fedora" || "$DISTRO" == "rhel" || "$DISTRO" == "centos" ]]; then
+            echo "  sudo dnf install python3-gobject python3-cairo gtk3 libappindicator-gtk3"
+        elif [[ "$DISTRO" == "arch" || "$DISTRO" == "manjaro" || "$DISTRO" == "endeavouros" ]]; then
+            echo "  sudo pacman -S python-gobject python-cairo gtk3 libappindicator-gtk3"
+        else
+            echo "  Please check the documentation for installing PyGObject and AppIndicator3 on your system"
+            echo "  See: https://pygobject.readthedocs.io/en/latest/getting_started.html"
+        fi
+            
+        # Note about virtual environments
+        echo -e "\nNote: If you're using a virtual environment, you may need to install these dependencies system-wide,"
+        echo "      or ensure your virtual environment can access the system packages."
+        echo "      For more information, see: docs/gtk_dependencies.md"
+    except Exception as e:
+        print(f"  ✗ Error checking GTK dependencies: {e}")
+        errors.append(f"GTK dependency check error: {e}")
     
     # Check EasyEffects/PulseEffects
     print("\nChecking system dependencies:")

@@ -21,6 +21,13 @@ fi
 # Activate the virtual environment
 source system-venv/bin/activate
 
+# Check for required Python dependencies
+echo "Checking Python dependencies..."
+if ! python3 -c "import spotipy" &>/dev/null; then
+    echo "Error: spotipy module not found. Installing..."
+    pip install spotipy
+fi
+
 # Load Spotify credentials if they exist
 if [ -f "$HOME/.adaptive-eq-credentials" ]; then
     source "$HOME/.adaptive-eq-credentials"

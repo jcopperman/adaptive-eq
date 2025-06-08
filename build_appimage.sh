@@ -5,6 +5,19 @@ set -e
 
 echo "Building Adaptive EQ AppImage..."
 
+# Source GTK dependency check function from check_dependencies.sh
+echo "Checking GTK dependencies before building..."
+if [ -f "check_dependencies.sh" ]; then
+    source check_dependencies.sh
+else
+    echo "Warning: check_dependencies.sh not found. Skipping dependency check."
+    echo "Make sure you have the required GTK dependencies installed:"
+    echo "  - python3-gi or python-gobject"
+    echo "  - python3-gi-cairo or python-cairo"
+    echo "  - gir1.2-gtk-3.0 or gtk3"
+    echo "  - gir1.2-appindicator3-0.1 or libappindicator-gtk3"
+fi
+
 # Make sure dependencies are installed
 if ! command -v appimagetool &> /dev/null; then
     echo "appimagetool not found. Downloading..."

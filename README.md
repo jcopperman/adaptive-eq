@@ -32,6 +32,7 @@ An automatic equalizer adjustment tool for Linux audiophiles. This application a
   # Arch Linux
   sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3
   ```
+  See the [GTK Dependencies Troubleshooting Guide](docs/gtk_dependencies.md) for more detailed information and solutions to common issues.
 
 ## Quick Installation
 
