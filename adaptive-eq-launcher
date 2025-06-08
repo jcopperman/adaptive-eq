@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This launcher script runs the Adaptive EQ app using system Python with all required dependencies
+# It should be installed in /usr/local/bin or linked from there
+
+# Set the installation directory (change this if installed elsewhere)
+INSTALL_DIR="/home/jonathan/Repos/adaptive-eq"
+
+# Export Spotify API credentials if provided
+if [ -f "$HOME/.adaptive-eq-credentials" ]; then
+    source "$HOME/.adaptive-eq-credentials"
+fi
+
+# Run the app using system Python with proper paths
+cd "$INSTALL_DIR"
+PYTHONPATH="$INSTALL_DIR" /usr/bin/python3 "$INSTALL_DIR/ui/tray.py"

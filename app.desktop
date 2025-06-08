@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Adaptive EQ
+Comment=Automatically adjusts EQ based on music
+Exec=/home/jonathan/Repos/adaptive-eq/adaptive-eq-launcher
+Icon=/home/jonathan/Repos/adaptive-eq/icon.png
+Terminal=false
+Type=Application
+Categories=Audio;Music;Utility;
+StartupNotify=true
