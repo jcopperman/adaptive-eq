@@ -25,7 +25,7 @@ An automatic equalizer adjustment tool for Linux audiophiles. This application a
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/adaptive-eq.git
+   git clone https://github.com/jcopperman/adaptive-eq.git
    cd adaptive-eq
    ```
 
