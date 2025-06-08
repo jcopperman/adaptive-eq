@@ -1,0 +1,14 @@
+# Example Spotify playlist URLs - one per line
+# Lines starting with # are ignored
+
+# Electronic music
+https://open.spotify.com/playlist/37i9dQZF1DX4dyzvaqLBqZ
+
+# Rock classics
+https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U
+
+# Hip hop
+https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd
+
+# Classical
+https://open.spotify.com/playlist/37i9dQZF1DWWEJlAGA9gs0

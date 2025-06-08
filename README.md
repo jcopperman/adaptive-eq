@@ -76,6 +76,42 @@ Example:
 }
 ```
 
+### Using the playlist_to_eq.py Helper
+
+The `playlist_to_eq.py` script helps you extract artists from your Spotify playlists and map them to EQ presets.
+
+```bash
+# Process a single playlist
+./playlist_to_eq.py https://open.spotify.com/playlist/37i9dQZF1DX4dyzvaqLBqZ
+
+# Process multiple playlists from a file
+./playlist_to_eq.py --playlists playlists.txt
+
+# Automatically map artists based on their genres
+./playlist_to_eq.py --auto https://open.spotify.com/playlist/37i9dQZF1DX4dyzvaqLBqZ
+
+# List all artists in your EQ profiles
+./playlist_to_eq.py --list-artists
+```
+
+### Using the eq_helper.py Utility
+
+The `eq_helper.py` utility provides additional functionality for managing and testing your EQ profiles.
+
+```bash
+# Test an EQ profile for a specific artist
+./eq_helper.py test "Daft Punk"
+
+# List artists grouped by EQ preset
+./eq_helper.py list
+
+# Monitor the current track and apply EQ presets (for 60 seconds)
+./eq_helper.py monitor --duration 60
+
+# Remove an artist from your EQ profiles
+./eq_helper.py remove "Artist Name"
+```
+
 ## Building Portable Versions
 
 ### AppImage
@@ -170,6 +206,42 @@ Example:
   "Hans Zimmer": "orchestral",
   "Metallica": "rock"
 }
+```
+
+### Using the playlist_to_eq.py Helper
+
+The `playlist_to_eq.py` script helps you extract artists from your Spotify playlists and map them to EQ presets.
+
+```bash
+# Process a single playlist
+./playlist_to_eq.py https://open.spotify.com/playlist/37i9dQZF1DX4dyzvaqLBqZ
+
+# Process multiple playlists from a file
+./playlist_to_eq.py --playlists playlists.txt
+
+# Automatically map artists based on their genres
+./playlist_to_eq.py --auto https://open.spotify.com/playlist/37i9dQZF1DX4dyzvaqLBqZ
+
+# List all artists in your EQ profiles
+./playlist_to_eq.py --list-artists
+```
+
+### Using the eq_helper.py Utility
+
+The `eq_helper.py` utility provides additional functionality for managing and testing your EQ profiles.
+
+```bash
+# Test an EQ profile for a specific artist
+./eq_helper.py test "Daft Punk"
+
+# List artists grouped by EQ preset
+./eq_helper.py list
+
+# Monitor the current track and apply EQ presets (for 60 seconds)
+./eq_helper.py monitor --duration 60
+
+# Remove an artist from your EQ profiles
+./eq_helper.py remove "Artist Name"
 ```
 
 ## Building Portable Versions
