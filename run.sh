@@ -18,6 +18,19 @@ if [ ! -d "system-venv" ]; then
     fi
 fi
 
+# Check if the virtual environment has system-site-packages enabled
+if [ -d "system-venv" ]; then
+    # Recreate the environment with system packages if needed
+    if source system-venv/bin/activate && ! python3 -c "import gi" &>/dev/null; then
+        echo -e "${YELLOW}Virtual environment doesn't have access to system packages.${NC}"
+        echo -e "${BLUE}Recreating virtual environment with system-site-packages...${NC}"
+        deactivate
+        rm -rf system-venv
+        python3 -m venv system-venv --system-site-packages
+        echo -e "${GREEN}Virtual environment recreated with system packages access.${NC}"
+    fi
+fi
+
 # Activate the virtual environment
 source system-venv/bin/activate
 
@@ -34,7 +47,33 @@ check_gtk_deps() {
     
     # Try to import gi module
     if ! python3 -c "import gi" &>/dev/null; then
-        echo -e "${RED}Error: Python GTK bindings (PyGObject) are not installed.${NC}"
+        echo -e "${RED}Error: Python GTK bindings (PyGObject) are not installed or not accessible in the virtual environment.${NC}"
+        
+        # First, check if the package is installed at the system level
+        if python3 -c "import sys; sys.path = [p for p in sys.path if 'site-packages' in p]; import gi" &>/dev/null; then
+            echo -e "${YELLOW}PyGObject is installed at the system level but not accessible in the virtual environment.${NC}"
+            echo -e "${YELLOW}Would you like to recreate the virtual environment with system-site-packages? (y/n)${NC}"
+            read -r recreate_venv
+            
+            if [[ "$recreate_venv" =~ ^[Yy]$ ]]; then
+                echo -e "${BLUE}Recreating virtual environment with system-site-packages...${NC}"
+                rm -rf system-venv
+                python3 -m venv system-venv --system-site-packages
+                source system-venv/bin/activate
+                pip install -r requirements.txt
+                echo -e "${GREEN}Virtual environment recreated with system packages access.${NC}"
+                # Check again
+                if ! python3 -c "import gi" &>/dev/null; then
+                    echo -e "${RED}Still unable to import GTK modules. Please try running ./troubleshoot_gtk.sh${NC}"
+                    exit 1
+                else
+                    echo -e "${GREEN}PyGObject is now accessible!${NC}"
+                    return 0
+                fi
+            fi
+        fi
+        
+        # If we get here, either the user didn't want to recreate the venv or the packages aren't installed
         echo -e "${YELLOW}Would you like to install the required dependencies now? (y/n)${NC}"
         read -r install_deps
         
@@ -55,7 +94,7 @@ check_gtk_deps() {
             fi
             
             case $DISTRO in
-                ubuntu|debian|pop|mint|elementary|zorin)
+                ubuntu|debian|pop|mint|linuxmint|elementary|zorin)
                     echo -e "${BLUE}Installing dependencies for Debian/Ubuntu-based distribution...${NC}"
                     sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
                     ;;

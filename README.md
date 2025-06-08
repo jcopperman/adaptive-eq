@@ -164,14 +164,11 @@ The `eq_helper.py` utility provides additional functionality for managing and te
 ### AppImage (recommended)
 
 ```bash
-# Option 1: Run the build script (recommended)
-./build_appimage.sh
-
-# Option 2: Manual AppImage build
-# Install required tools
+# Install required tools (if not already installed)
+source system-venv/bin/activate  # Or your virtual environment
 pip install pyinstaller
 
-# Build single binary first
+# Option 1: Build single binary first
 pyinstaller --onefile --name adaptive-eq \
     --add-data "icon.png:." \
     --add-data "config:config" \
@@ -180,68 +177,33 @@ pyinstaller --onefile --name adaptive-eq \
     --hidden-import=spotipy \
     ui/tray.py
 
-# Then build the AppImage manually
-mkdir -p AppDir/usr/bin AppDir/usr/share/applications
-cp dist/adaptive-eq AppDir/usr/bin/
-cp adaptive-eq.desktop AppDir/usr/share/applications/
-cp icon.png AppDir/
-# ... etc.
+# Option 2: Use the build script to handle everything
+./build_appimage.sh
 ```
 
 This will create an AppImage file named `Adaptive_EQ-x86_64.AppImage` in the current directory.
 
-### AppImage Dependencies
+> **Note**: The AppImage will still require the GTK libraries to be installed on the target system.
+> Install these dependencies on the target system with:
+> ```bash
+> # For Debian/Ubuntu
+> sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
+> 
+> # For Fedora
+> sudo dnf install python3-gobject python3-cairo gtk3 libappindicator-gtk3
+> 
+> # For Arch Linux
+> sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3
+> ```
 
-The AppImage will automatically check for required dependencies and guide users on installation if anything is missing. The primary dependencies are:
-
-```bash
-# For Debian/Ubuntu
-sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1
-
-# For Fedora
-sudo dnf install python3-gobject python3-cairo gtk3 libappindicator-gtk3
-
-# For Arch Linux
-sudo pacman -Sy python-gobject python-cairo gtk3 libappindicator-gtk3
-```
-
-### Troubleshooting AppImage
-
-If you encounter issues with the AppImage:
-
-1. Make sure it has execute permissions: `chmod +x Adaptive_EQ-x86_64.AppImage`
-2. Run with debug output: `ADAPTIVE_EQ_LOG_LEVEL=debug ./Adaptive_EQ-x86_64.AppImage`
-3. Check GTK dependencies as mentioned above
-4. Check logs at `~/.cache/adaptive-eq/logs/`
-
-### Universal Installer
-
-For users who prefer a traditional installation, the universal installer script (`install.sh`) provides a more integrated experience:
+### Debian Package
 
 ```bash
-# Run the installer
-./install.sh
-```
+# Install required tools
+sudo apt install python3-stdeb dh-python
 
-The installer:
-- Detects your Linux distribution
-- Installs all required dependencies
-- Creates a Python virtual environment
-- Configures Spotify credentials
-- Creates desktop entries
-- Sets up EQ presets
-- Installs to `~/.local/share/adaptive-eq`
-
-After installation, you can launch the application from your desktop environment or run:
-
-```bash
-~/.local/bin/adaptive-eq
-```
-
-To uninstall:
-
-```bash
-~/.local/share/adaptive-eq/uninstall.sh
+# Build the debian package
+python setup.py --command-packages=stdeb.command bdist_deb
 ```
 
 ## Troubleshooting
@@ -263,6 +225,20 @@ If you encounter issues:
    sudo apt install python3-gi python3-gi-cairo  # Debian/Ubuntu
    sudo dnf install python3-gobject python3-cairo  # Fedora
    sudo pacman -Sy python-gobject python-cairo  # Arch
+   ```
+   
+   If the packages are already installed but you're still getting this error, it might be a virtual environment issue:
+   ```bash
+   # Recreate your virtual environment with system-site-packages
+   rm -rf system-venv
+   python3 -m venv system-venv --system-site-packages
+   # Then run the application again
+   ./run.sh
+   ```
+   
+   For a detailed diagnosis, run:
+   ```bash
+   ./troubleshoot_gtk.sh
    ```
 
 2. **"AppIndicator3 not found"**: Install AppIndicator with:
@@ -473,11 +449,3 @@ sudo apt install python3-stdeb dh-python
 # Build the debian package
 python setup.py --command-packages=stdeb.command bdist_deb
 ```
-
-## License
-
-MIT License
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
