@@ -6,6 +6,7 @@ This directory contains detailed documentation for the Adaptive EQ application.
 
 - [Logging System](logging.md) - Details about the logging system, log levels, and troubleshooting
 - [Compatibility Guide](compatibility.md) - Distribution-specific information and compatibility notes
+- [EasyEffects Troubleshooting](easyeffects_troubleshooting.md) - Fixing issues with EasyEffects UI synchronization
 
 ## Additional Resources
 

@@ -58,6 +58,31 @@ EOC
     fi
 fi
 
+# Check for EasyEffects
+if ! command -v easyeffects &> /dev/null; then
+    echo -e "${YELLOW}Warning: EasyEffects not found.${NC}"
+    echo -e "This application requires EasyEffects to function properly."
+    echo -e "Please install it using your distribution's package manager."
+    echo ""
+    echo -e "For example:"
+    echo -e "${BLUE}  sudo apt install easyeffects     # Debian/Ubuntu${NC}"
+    echo -e "${BLUE}  sudo dnf install easyeffects     # Fedora${NC}"
+    echo -e "${BLUE}  sudo pacman -S easyeffects       # Arch Linux${NC}"
+    echo ""
+    echo -e "Press Enter to continue anyway, or Ctrl+C to exit."
+    read
+fi
+
+# Check for force-refresh flag and show tip
+if [[ "$*" == *"--force-refresh"* ]]; then
+    echo -e "${GREEN}Running with force-refresh enabled for better EasyEffects UI synchronization${NC}"
+else
+    echo -e "${BLUE}Tip: If EQ presets don't show up in EasyEffects UI, try:${NC}"
+    echo -e "${BLUE}  - Running with --force-refresh flag${NC}"
+    echo -e "${BLUE}  - Using the 'Force EasyEffects Refresh' menu option${NC}"
+    echo -e "${BLUE}  - For more help, see the troubleshooting guide${NC}"
+fi
+
 echo -e "${GREEN}Starting Adaptive EQ...${NC}"
 # Run the application wrapper
 exec "${APPDIR}/usr/bin/adaptive-eq-wrapper" "$@"

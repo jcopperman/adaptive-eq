@@ -3,12 +3,23 @@
 - View currently playing track
 - Toggle adaptive mode on/off
 - Manually select EQ presets
+- Force EasyEffects UI refresh
 - Refresh EQ profiles
 - Create new EQ presets
 - Configure Spotify
 - Easy access to quit the application
 
 ## Advanced Features
+
+### EasyEffects Integration
+
+The application uses multiple methods to ensure EQ presets are properly applied and visible in the UI:
+
+- **Multiple Application Methods**: Uses gsettings, DBus interface, and direct file updates
+- **UI Synchronization**: Detects and addresses EasyEffects UI update issues
+- **Force Refresh**: Option to force EasyEffects to reload presets and update its UI
+- **Config Management**: Ensures proper config.json existence and settings
+- **Diagnostic Tools**: Dedicated tools for troubleshooting EasyEffects integration
 
 ### Logging System
 

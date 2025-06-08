@@ -44,4 +44,11 @@ check_dependency "AppIndicator3" "import gi; gi.require_version('AppIndicator3',
   }
 
 # Run the application
-exec "${APPDIR}/usr/bin/adaptive-eq" "$@"
+# Check if --force-refresh is passed
+if [[ "$*" == *"--force-refresh"* ]]; then
+    echo -e "\033[0;34mRunning with force-refresh enabled\033[0m"
+    exec "${APPDIR}/usr/bin/adaptive-eq" "$@"
+else
+    echo -e "\033[0;34mTip: You can use --force-refresh if EasyEffects UI doesn't update\033[0m"
+    exec "${APPDIR}/usr/bin/adaptive-eq" "$@"
+fi

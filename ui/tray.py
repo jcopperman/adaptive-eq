@@ -7,11 +7,16 @@ import threading
 import signal
 import sys
 import time
+import argparse
 
 # Add parent directory to path to enable imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from services.spotify import get_current_track
-from services.eq_control import get_available_presets, apply_eq_preset
+from services.eq_control import get_available_presets, apply_eq_preset, force_ui_refresh
+from services.logger import setup_logger
+
+# Set up logger
+logger = setup_logger("adaptive_eq_tray", log_level="info")
 
 class AdaptiveEQTray:
     def __init__(self):
@@ -91,6 +96,12 @@ class AdaptiveEQTray:
         config_spotify_item.connect("activate", self.configure_spotify)
         menu.append(config_spotify_item)
         
+        # Add option to force UI refresh
+        force_refresh_item = Gtk.MenuItem(label="Force EasyEffects Refresh")
+        force_refresh_item.connect("activate", self.force_refresh)
+        menu.append(force_refresh_item)
+        
+        # Add separator
         menu.append(Gtk.SeparatorMenuItem())
         
         # Quit item
@@ -105,15 +116,15 @@ class AdaptiveEQTray:
         """Toggle adaptive mode on/off"""
         self.adaptive_mode = widget.get_active()
         if self.adaptive_mode:
-            print("Adaptive EQ mode enabled")
+            logger.info("Adaptive EQ mode enabled")
             self.show_notification("Adaptive EQ", "Adaptive EQ mode enabled")
         else:
-            print("Adaptive EQ mode disabled (manual mode)")
+            logger.info("Adaptive EQ mode disabled (manual mode)")
             self.show_notification("Adaptive EQ", "Manual EQ mode enabled")
     
     def apply_preset(self, widget, preset_name):
         """Apply a specific EQ preset manually"""
-        success = apply_eq_preset(preset_name)
+        success = apply_eq_preset(preset_name, force_ui_refresh=True)
         if success:
             self.current_preset = preset_name
             self.update_preset_status(preset_name)
@@ -152,7 +163,7 @@ class AdaptiveEQTray:
             subprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'create_eq_presets.py'), '--all'])
             self.show_notification("Adaptive EQ", "Creating EQ presets...", "info")
         except Exception as e:
-            print(f"Error launching create_eq_presets.py: {e}")
+            logger.error(f"Error launching create_eq_presets.py: {e}")
             self.show_notification("Adaptive EQ", f"Error creating presets: {e}", "error")
     
     def configure_spotify(self, widget=None):
@@ -161,8 +172,22 @@ class AdaptiveEQTray:
             import subprocess
             subprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'configure_spotify.py')])
         except Exception as e:
-            print(f"Error launching configure_spotify.py: {e}")
+            logger.error(f"Error launching configure_spotify.py: {e}")
             self.show_notification("Adaptive EQ", f"Error configuring Spotify: {e}", "error")
+    
+    def force_refresh(self, widget=None):
+        """Force EasyEffects UI to refresh"""
+        logger.info("Manually forcing EasyEffects UI refresh")
+        if force_ui_refresh():
+            self.show_notification("Adaptive EQ", "EasyEffects UI refresh triggered", "info")
+        else:
+            self.show_notification("Adaptive EQ", "EasyEffects not running, nothing to refresh", "info")
+            
+        # Also reapply the current preset if one is active
+        if self.current_preset and self.current_preset != "None":
+            logger.info(f"Reapplying current preset: {self.current_preset}")
+            apply_eq_preset(self.current_preset, force_ui_refresh=True)
+            self.show_notification("Adaptive EQ", f"Reapplied preset: {self.current_preset}")
     
     def update_status(self, track_info=None):
         """Update the status display in the menu"""
@@ -204,7 +229,7 @@ class AdaptiveEQTray:
             application.register()
             application.send_notification(None, notification)
         except Exception as e:
-            print(f"Error showing notification: {e}")
+            logger.error(f"Error showing notification: {e}")
     
     def monitor_spotify(self):
         """Background thread that monitors Spotify and applies EQ profiles"""
@@ -218,7 +243,7 @@ class AdaptiveEQTray:
             with open(profile_path, "r") as f:
                 profile_map = json.load(f)
         
-        print(f"Loaded {len(profile_map)} artist → preset mappings")
+        logger.info(f"Loaded {len(profile_map)} artist → preset mappings")
         last_artist = None
         current_preset = None
         retry_count = 0
@@ -233,15 +258,15 @@ class AdaptiveEQTray:
                 if track and self.adaptive_mode:
                     artist = track.get("artist")
                     if artist != last_artist:
-                        print(f"Detected new artist: {artist}")
+                        logger.info(f"Detected new artist: {artist}")
                         preset = profile_map.get(artist, "default")
                         
                         # Only change preset if it's different from the current one
                         if preset != current_preset:
-                            print(f"Applying EQ preset: {preset}")
-                            success = apply_eq_preset(preset)
+                            logger.info(f"Applying EQ preset: {preset}")
+                            success = apply_eq_preset(preset, force_ui_refresh=True)
                             if success:
-                                print(f"Successfully applied EQ preset: {preset} for artist: {artist}")
+                                logger.info(f"Successfully applied EQ preset: {preset} for artist: {artist}")
                                 current_preset = preset
                                 self.current_preset = preset
                                 self.update_preset_status(preset)
@@ -252,14 +277,14 @@ class AdaptiveEQTray:
                                     f"Applied '{preset}' preset for {artist}"
                                 )
                             else:
-                                print(f"Failed to apply EQ preset: {preset} for artist: {artist}")
+                                logger.warning(f"Failed to apply EQ preset: {preset} for artist: {artist}")
                         else:
-                            print(f"Preset {preset} already active, skipping application")
+                            logger.info(f"Preset {preset} already active, skipping application")
                         
                         last_artist = artist
             except Exception as e:
                 retry_count += 1
-                print(f"Error in monitor_spotify: {e}")
+                logger.error(f"Error in monitor_spotify: {e}")
                 if retry_count >= max_retries:
                     self.show_notification(
                         "Adaptive EQ Error", 

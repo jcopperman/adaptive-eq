@@ -286,6 +286,41 @@ If you encounter issues:
    sudo apt install libgtk-3-0 libappindicator3-1  # Debian/Ubuntu
    ```
 
+## Troubleshooting EasyEffects UI Issues
+
+If you notice that EQ presets are applied (the sound changes) but the EasyEffects UI doesn't update to show the current preset, you can:
+
+1. **Use the Force Refresh Feature**:
+   - In the tray icon menu, click "Force EasyEffects Refresh"
+   - When running the CLI version, use the force-refresh option:
+     ```bash
+     ./run_cli.sh
+     ```
+     or
+     ```bash
+     python3 main.py --force-refresh
+     ```
+
+2. **Run the Diagnostic Tool**:
+   ```bash
+   ./debug_easyeffects.py
+   ```
+   This will:
+   - Check EasyEffects configuration
+   - Test different preset application methods
+   - Guide you through fixing UI refresh issues
+
+3. **Common Fixes**:
+   - Ensure EasyEffects is running before starting Adaptive EQ
+   - Restart EasyEffects if UI sync issues persist
+   - Check that `~/.config/easyeffects/config.json` exists and has proper permissions
+
+The application now uses multiple methods to ensure presets are properly applied and visible in the UI, including:
+- Using gsettings to set presets
+- DBus interface communication
+- Direct file updates
+- Sending reload signals to EasyEffects
+
 ## License
 
 MIT License
